@@ -1,55 +1,34 @@
 import torch
 import mido
-import np as numpy
+import numpy as np
 from sys import argv
 
 NUM_NOTES = 128
 notes_on = []
 duration_dict = {}
 
-def extractMelody(midi_file, new_file_name):
+def extractMelody(midi_file, new_file_name, melody_track):
     
     mid = mido.MidiFile()
-    track = mido.MidiTrack()
-    mid.tracks.append(track)
-    for msg in mido.MidiFile(midi_file).tracks[0]:
-        if msg.type != 'note_on' or (msg.type == 'note_on' and msg.channel == 0):
-            track.append(msg)
-    print('DONE' + midi_file)
+    newtrack = mido.MidiTrack()
+    for msg in mido.MidiFile(midi_file).tracks[melody_track]:
+        newtrack.append(msg)
+    mid.tracks.append(newtrack)
+    print('DONE ' + midi_file)
     mid.save(new_file_name)
 
-
-def init_duration_dict(midi_file):
-	on_notes = []
-	for msg in mido.MidiFile(midi_file).tracks[0]: 
-		if msg.type == 'note_on' and msg.velocity != 0:
-			on_notes.append(msg)
-		elif msg.type == 'note_off' and msg.velocity == 0: 
-			for on_msg in on_notes:
-				if on_msg.note == msg.note: 
-					duration_dict[on_msg] = msg.time - on_msg.time
-					on_notes.remove(on_msg)
-	print("Done initializing dictionary")
-
-# One hot vector encoding scheme
-def to_encoding1(midi_msg):
-	encoding = np.zeros((1, NUM_NOTES + 1))
-	encoding[midi_msg.note] = 1
-	encoding[NUM_NOTES] = midi_msg.velocity
-	return encoding
-
-# Experimental encoding scheme: byte 1 = note played, byte 2 = velocity, byte 3 & 4 = duration of the note played
-def to_encoding2(midi_msg):
-	encoding = np.zeros((1, 3))
-	if msg.type == 'note_on' and msg.velocity == 0: 
-		return encoding
-	encoding[0] = midi_msg.note
-	encoding[1] = midi_msg.velocity
-	encoding[3] = duration_dict[msg]
-	return encoding
-
+def extractAllMelodies(num_outs, path_name, melody_track):
+	for i in range (1, int(num_outs) + 1):
+		in_file = path_name + '/' + str(i) + '.mid'
+		out_file = path_name + '/' + str(i) + '_out.mid'
+		extractMelody(in_file, out_file, int(melody_track))
 
 if __name__ == '__main__':
-    in_name = argv[1] + '.mid'
-    out_name = "out_" + argv[2] + '.mid'
-    extractMelody(in_name, out_name)
+    # in_name = argv[1]
+    # out_name = argv[2]
+    # num_outs = argv[3]
+    # extractMelody(in_name, out_name)
+    melody_track = argv[3]
+    path_name = argv[2]
+    num_outs = argv[1]
+    extractAllMelodies(num_outs, path_name, melody_track)
